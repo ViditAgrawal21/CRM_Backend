@@ -12,7 +12,7 @@ export const createVisitController = asyncHandler(async (req, res) => {
 
 export const getVisitsController = asyncHandler(async (req, res) => {
   const { status } = req.query;
-  const visits = await visitsService.getVisits(req.user.id, status);
+  const visits = await visitsService.getVisits(req.user.id, req.user.role, status);
 
   res.status(200).json({
     success: true,

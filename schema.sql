@@ -122,6 +122,7 @@ CREATE TABLE meetings (
     location TEXT,
     notes TEXT,
     outcome TEXT,
+    remark TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     completed_at TIMESTAMP WITH TIME ZONE
 );
@@ -144,6 +145,7 @@ CREATE TABLE visits (
     site_location TEXT,
     notes TEXT,
     outcome TEXT,
+    remark TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     completed_at TIMESTAMP WITH TIME ZONE
 );

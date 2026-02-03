@@ -16,7 +16,13 @@ router.post('/',
   leadsController.createLeadController
 );
 
-// Bulk upload leads (admin only)
+// Bulk upload leads (admin only) - JSON format
+router.post('/bulk/upload', 
+  authorize('owner', 'admin'), 
+  leadsController.bulkUploadLeadsController
+);
+
+// Bulk upload leads (admin only) - CSV format
 router.post('/bulk', 
   authorize('owner', 'admin'), 
   leadsController.bulkCreateLeadsController

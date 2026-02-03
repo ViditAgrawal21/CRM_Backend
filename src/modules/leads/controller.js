@@ -63,3 +63,12 @@ export const assignLeadController = asyncHandler(async (req, res) => {
     data: lead
   });
 });
+
+export const bulkUploadLeadsController = asyncHandler(async (req, res) => {
+  const result = await leadsService.bulkUploadLeads(req.body, req.user.id, req.user.role);
+
+  res.status(201).json({
+    success: true,
+    data: result
+  });
+});

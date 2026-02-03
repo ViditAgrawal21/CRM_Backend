@@ -1,7 +1,7 @@
 import { supabase } from '../../config/supabase.js';
 
 export const createVisit = async (visitData, userId) => {
-  const { leadId, scheduledAt, siteLocation, notes } = visitData;
+  const { leadId, scheduledAt, siteLocation, notes, remark } = visitData;
 
   const { data, error } = await supabase
     .from('visits')
@@ -10,7 +10,8 @@ export const createVisit = async (visitData, userId) => {
       user_id: userId,
       scheduled_at: scheduledAt,
       site_location: siteLocation,
-      notes
+      notes,
+      remark
     })
     .select(`
       *,
@@ -22,17 +23,26 @@ export const createVisit = async (visitData, userId) => {
   return data;
 };
 
-export const getVisits = async (userId, status = null) => {
+export const getVisits = async (userId, userRole, status = null) => {
   let query = supabase
     .from('visits')
     .select(`
       *,
-      lead:leads(id, name, phone, configuration, location)
-    `)
-    .eq('user_id', userId);
+      lead:leads(id, name, phone, configuration, location),
+      user:user_id(id, name, phone, role)
+    `);
 
-  if (status) {
-    query = query.eq('status', status);
+  // Owner sees all scheduled visits in their team hierarchy
+  if (userRole === 'owner') {
+    if (status) {
+      query = query.eq('status', status);
+    }
+  } else {
+    // Other users see only their own visits
+    query = query.eq('user_id', userId);
+    if (status) {
+      query = query.eq('status', status);
+    }
   }
 
   const { data, error } = await query.order('scheduled_at', { ascending: true });

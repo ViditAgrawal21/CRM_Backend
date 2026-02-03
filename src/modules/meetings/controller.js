@@ -12,7 +12,7 @@ export const createMeetingController = asyncHandler(async (req, res) => {
 
 export const getMeetingsController = asyncHandler(async (req, res) => {
   const { status } = req.query;
-  const meetings = await meetingsService.getMeetings(req.user.id, status);
+  const meetings = await meetingsService.getMeetings(req.user.id, req.user.role, status);
 
   res.status(200).json({
     success: true,
