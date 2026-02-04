@@ -11,13 +11,13 @@
 -- ========================================
 
 -- Admin (created by Owner)
-INSERT INTO users (id, name, phone, password_hash, role, created_by, monthly_meeting_target, monthly_visit_target, monthly_revenue_target, monthly_bonus)
+INSERT INTO users (id, name, phone, password_hash, role, parent_id, monthly_meeting_target, monthly_visit_target, monthly_revenue_target, monthly_bonus)
 VALUES 
 ('11111111-1111-1111-1111-111111111111', 'Rajesh Kumar', '8888888888', '$2b$10$MzUt5/cWKzR9i/uSXeQ2.Ou9Y02XfQtmmbe3QT.j3lI1i3DsHEMXe', 'admin', 
 (SELECT id FROM users WHERE phone='9999999999'), 50, 30, 5000000, 50000);
 
 -- Managers (created by Admin)
-INSERT INTO users (id, name, phone, password_hash, role, created_by, monthly_meeting_target, monthly_visit_target, monthly_revenue_target, monthly_bonus)
+INSERT INTO users (id, name, phone, password_hash, role, parent_id, monthly_meeting_target, monthly_visit_target, monthly_revenue_target, monthly_bonus)
 VALUES 
 ('22222222-2222-2222-2222-222222222222', 'Priya Sharma', '7777777777', '$2b$10$MzUt5/cWKzR9i/uSXeQ2.Ou9Y02XfQtmmbe3QT.j3lI1i3DsHEMXe', 'manager', 
 '11111111-1111-1111-1111-111111111111', 40, 25, 3000000, 30000),
@@ -25,7 +25,7 @@ VALUES
 '11111111-1111-1111-1111-111111111111', 40, 25, 3000000, 30000);
 
 -- Employees under Manager 1 (Priya)
-INSERT INTO users (id, name, phone, password_hash, role, created_by, monthly_meeting_target, monthly_visit_target, monthly_revenue_target, monthly_bonus)
+INSERT INTO users (id, name, phone, password_hash, role, parent_id, monthly_meeting_target, monthly_visit_target, monthly_revenue_target, monthly_bonus)
 VALUES 
 ('33333333-3333-3333-3333-333333333333', 'Rahul Desai', '6666666666', '$2b$10$MzUt5/cWKzR9i/uSXeQ2.Ou9Y02XfQtmmbe3QT.j3lI1i3DsHEMXe', 'employee', 
 '22222222-2222-2222-2222-222222222222', 25, 15, 1500000, 15000),
@@ -35,7 +35,7 @@ VALUES
 '22222222-2222-2222-2222-222222222222', 25, 15, 1500000, 15000);
 
 -- Employees under Manager 2 (Amit)
-INSERT INTO users (id, name, phone, password_hash, role, created_by, monthly_meeting_target, monthly_visit_target, monthly_revenue_target, monthly_bonus)
+INSERT INTO users (id, name, phone, password_hash, role, parent_id, monthly_meeting_target, monthly_visit_target, monthly_revenue_target, monthly_bonus)
 VALUES 
 ('33333333-3333-3333-3333-333333333336', 'Neha Gupta', '6666666663', '$2b$10$MzUt5/cWKzR9i/uSXeQ2.Ou9Y02XfQtmmbe3QT.j3lI1i3DsHEMXe', 'employee', 
 '22222222-2222-2222-2222-222222222223', 25, 15, 1500000, 15000),
@@ -63,17 +63,17 @@ VALUES
 -- Rahul's leads
 ('55555555-5555-5555-5555-555555555551', 'lead', '2026-01-28', 'Amit Shah', '9876543210', '2BHK', 'Pune West', 'prospect', 'Very interested, budget confirmed', '33333333-3333-3333-3333-333333333333', '11111111-1111-1111-1111-111111111111'),
 ('55555555-5555-5555-5555-555555555552', 'lead', '2026-01-29', 'Sunita Joshi', '9876543211', '3BHK', 'Pune West', 'contacted', 'Called, requested callback tomorrow', '33333333-3333-3333-3333-333333333333', '11111111-1111-1111-1111-111111111111'),
-('55555555-5555-5555-5555-555555555553', 'call_back', '2026-02-01', 'Rohan Mehta', '9876543212', '2BHK', 'Pune East', 'new', 'Interested in Green Valley project', '33333333-3333-3333-3333-333333333333', '11111111-1111-1111-1111-111111111111'),
-('55555555-5555-5555-5555-555555555554', 'lead', '2026-02-02', 'Kavita Rao', '9876543213', '3BHK', 'Pune West', 'qualified', 'Budget: 1Cr, wants higher floor', '33333333-3333-3333-3333-333333333333', '11111111-1111-1111-1111-111111111111'),
+('55555555-5555-5555-5555-555555555553', 'lead', '2026-02-01', 'Rohan Mehta', '9876543212', '2BHK', 'Pune East', 'new', 'Interested in Green Valley project', '33333333-3333-3333-3333-333333333333', '11111111-1111-1111-1111-111111111111'),
+('55555555-5555-5555-5555-555555555554', 'lead', '2026-02-02', 'Kavita Rao', '9876543213', '3BHK', 'Pune West', 'interested', 'Budget: 1Cr, wants higher floor', '33333333-3333-3333-3333-333333333333', '11111111-1111-1111-1111-111111111111'),
 
 -- Sneha's leads
 ('55555555-5555-5555-5555-555555555555', 'lead', '2026-01-30', 'Rajesh Kulkarni', '9876543214', '2BHK', 'Pune South', 'contacted', 'Interested in payment plans', '33333333-3333-3333-3333-333333333334', '11111111-1111-1111-1111-111111111111'),
 ('55555555-5555-5555-5555-555555555556', 'lead', '2026-02-01', 'Pooja Nair', '9876543215', '3BHK', 'Pune West', 'prospect', 'Site visit completed, very positive', '33333333-3333-3333-3333-333333333334', '11111111-1111-1111-1111-111111111111'),
-('55555555-5555-5555-5555-555555555557', 'not_interested', '2026-02-02', 'Sanjay Kumar', '9876543216', '2BHK', 'Pune East', 'spam', 'Wrong number, broker', '33333333-3333-3333-3333-333333333334', '11111111-1111-1111-1111-111111111111'),
+('55555555-5555-5555-5555-555555555557', 'data', '2026-02-02', 'Sanjay Kumar', '9876543216', '2BHK', 'Pune East', 'spam', 'Wrong number, broker', '33333333-3333-3333-3333-333333333334', '11111111-1111-1111-1111-111111111111'),
 
 -- Vikram's leads
-('55555555-5555-5555-5555-555555555558', 'lead', '2026-01-31', 'Deepa Iyer', '9876543217', '3BHK', 'Pune West', 'qualified', 'Family of 5, needs spacious flat', '33333333-3333-3333-3333-333333333335', '11111111-1111-1111-1111-111111111111'),
-('55555555-5555-5555-5555-555555555559', 'call_back', '2026-02-01', 'Manish Agarwal', '9876543218', '2BHK', 'Pune North', 'contacted', 'Will decide after Diwali', '33333333-3333-3333-3333-333333333335', '11111111-1111-1111-1111-111111111111'),
+('55555555-5555-5555-5555-555555555558', 'lead', '2026-01-31', 'Deepa Iyer', '9876543217', '3BHK', 'Pune West', 'interested', 'Family of 5, needs spacious flat', '33333333-3333-3333-3333-333333333335', '11111111-1111-1111-1111-111111111111'),
+('55555555-5555-5555-5555-555555555559', 'lead', '2026-02-01', 'Manish Agarwal', '9876543218', '2BHK', 'Pune North', 'contacted', 'Will decide after Diwali', '33333333-3333-3333-3333-333333333335', '11111111-1111-1111-1111-111111111111'),
 ('55555555-5555-5555-5555-555555555560', 'lead', '2026-02-03', 'Anita Deshmukh', '9876543219', '3BHK', 'Pune West', 'new', 'Just received, need to call', '33333333-3333-3333-3333-333333333335', '11111111-1111-1111-1111-111111111111'),
 
 -- Neha's leads
@@ -152,7 +152,7 @@ VALUES
 -- 9. Targets (February 2026)
 -- ========================================
 
-INSERT INTO targets (id, user_id, month, meeting_target, visit_target, revenue_target, bonus, meetings_achieved, visits_achieved, revenue_achieved, bonus_approved)
+INSERT INTO targets (id, user_id, month, meeting_target, visit_target, revenue_target, bonus, meeting_achieved, visit_achieved, revenue_achieved, bonus_approved)
 VALUES 
 ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '11111111-1111-1111-1111-111111111111', '2026-02-01', 50, 30, 5000000, 50000, 4, 3, 0, false),
 ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbc', '33333333-3333-3333-3333-333333333333', '2026-02-01', 25, 15, 1500000, 15000, 2, 1, 0, false),
@@ -165,12 +165,12 @@ VALUES
 -- 10. Daily Reports
 -- ========================================
 
-INSERT INTO daily_reports (id, user_id, report_date, total_calls, total_whatsapp, total_templates, total_meetings, total_visits, next_day_plan)
+INSERT INTO daily_reports (id, user_id, report_date, visits_till_now, meetings_till_now, today_meetings, today_visits, total_calls, next_day_plan)
 VALUES 
-('cccccccc-cccc-cccc-cccc-cccccccccccc', '33333333-3333-3333-3333-333333333333', '2026-02-01', 5, 2, 1, 0, 0, 'Follow up with Sunita Joshi. Schedule site visit for Amit Shah. Call 3 new leads.'),
-('cccccccc-cccc-cccc-cccc-cccccccccccd', '33333333-3333-3333-3333-333333333333', '2026-02-02', 4, 1, 0, 1, 0, 'Complete Kavita Rao meeting. Follow up with Rohan Mehta. Update lead statuses.'),
-('cccccccc-cccc-cccc-cccc-ccccccccccce', '33333333-3333-3333-3333-333333333334', '2026-02-01', 6, 1, 0, 1, 1, 'Follow up with Pooja after site visit. Call Rajesh for payment plan. Update CRM.'),
-('cccccccc-cccc-cccc-cccc-cccccccccccf', '33333333-3333-3333-3333-333333333335', '2026-02-02', 3, 0, 0, 0, 0, 'Schedule site visit for Deepa Iyer. Follow up with Manish Agarwal. Call new lead Anita.');
+('cccccccc-cccc-cccc-cccc-cccccccccccc', '33333333-3333-3333-3333-333333333333', '2026-02-01', 1, 2, 0, 0, 5, 'Follow up with Sunita Joshi. Schedule site visit for Amit Shah. Call 3 new leads.'),
+('cccccccc-cccc-cccc-cccc-cccccccccccd', '33333333-3333-3333-3333-333333333333', '2026-02-02', 1, 3, 1, 0, 4, 'Complete Kavita Rao meeting. Follow up with Rohan Mehta. Update lead statuses.'),
+('cccccccc-cccc-cccc-cccc-ccccccccccce', '33333333-3333-3333-3333-333333333334', '2026-02-01', 1, 2, 1, 1, 6, 'Follow up with Pooja after site visit. Call Rajesh for payment plan. Update CRM.'),
+('cccccccc-cccc-cccc-cccc-cccccccccccf', '33333333-3333-3333-3333-333333333335', '2026-02-02', 1, 0, 0, 0, 3, 'Schedule site visit for Deepa Iyer. Follow up with Manish Agarwal. Call new lead Anita.');
 
 -- ========================================
 -- Success Message

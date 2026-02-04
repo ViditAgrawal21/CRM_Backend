@@ -95,14 +95,25 @@ export const bulkCreateLeads = async (csvContent, creatorId, creatorRole) => {
   return results;
 };
 
-export const getLeads = async (userId, userRole) => {
+export const getLeads = async (userId, userRole, filters = {}) => {
   let query = supabase
     .from('leads')
     .select(`
       *,
       assigned_to_user:assigned_to(id, name, phone),
       created_by_user:created_by(id, name, phone)
-    `);
+    `)
+    .eq('is_deleted', false); // Exclude soft-deleted leads
+
+  // Filter by type if provided (lead/data)
+  if (filters.type && ['lead', 'data'].includes(filters.type)) {
+    query = query.eq('type', filters.type);
+  }
+
+  // Filter by status if provided
+  if (filters.status) {
+    query = query.eq('status', filters.status);
+  }
 
   // Admins see all leads they created
   if (userRole === 'admin') {
@@ -482,4 +493,148 @@ const parseRemarkedDateTime = (match) => {
   date.setHours(finalHour, minute, 0, 0);
 
   return date.toISOString();
+};
+
+// Soft delete a lead (manager/employee/admin)
+export const softDeleteLead = async (leadId, userId, userRole) => {
+  // Check if user has access to this lead
+  const { data: lead, error: fetchError } = await supabase
+    .from('leads')
+    .select('assigned_to, created_by, is_deleted')
+    .eq('id', leadId)
+    .single();
+
+  if (fetchError || !lead) {
+    throw new Error('Lead not found');
+  }
+
+  if (lead.is_deleted) {
+    throw new Error('Lead is already deleted');
+  }
+
+  // Check permission: assigned user, creator, or admin/owner
+  const hasPermission = 
+    lead.assigned_to === userId || 
+    lead.created_by === userId || 
+    ['owner', 'admin'].includes(userRole);
+
+  if (!hasPermission) {
+    throw new Error('You do not have permission to delete this lead');
+  }
+
+  const { data, error } = await supabase
+    .from('leads')
+    .update({
+      is_deleted: true,
+      deleted_by: userId,
+      deleted_at: new Date().toISOString()
+    })
+    .eq('id', leadId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+// Get all deleted leads (admin only)
+export const getDeletedLeads = async (userId, userRole) => {
+  if (!['owner', 'admin'].includes(userRole)) {
+    throw new Error('Only admins can view deleted leads');
+  }
+
+  let query = supabase
+    .from('leads')
+    .select(`
+      *,
+      assigned_to_user:assigned_to(id, name, phone),
+      created_by_user:created_by(id, name, phone),
+      deleted_by_user:deleted_by(id, name, phone)
+    `)
+    .eq('is_deleted', true);
+
+  // Admin sees only leads they created
+  if (userRole === 'admin') {
+    query = query.eq('created_by', userId);
+  }
+  // Owner sees all deleted leads
+
+  const { data, error } = await query.order('deleted_at', { ascending: false });
+
+  if (error) throw error;
+  return data;
+};
+
+// Restore a soft-deleted lead (admin only)
+export const restoreLead = async (leadId, userId, userRole) => {
+  if (!['owner', 'admin'].includes(userRole)) {
+    throw new Error('Only admins can restore deleted leads');
+  }
+
+  const { data: lead, error: fetchError } = await supabase
+    .from('leads')
+    .select('created_by, is_deleted')
+    .eq('id', leadId)
+    .single();
+
+  if (fetchError || !lead) {
+    throw new Error('Lead not found');
+  }
+
+  if (!lead.is_deleted) {
+    throw new Error('Lead is not deleted');
+  }
+
+  // Admin can only restore leads they created, owner can restore all
+  if (userRole === 'admin' && lead.created_by !== userId) {
+    throw new Error('You can only restore leads you created');
+  }
+
+  const { data, error } = await supabase
+    .from('leads')
+    .update({
+      is_deleted: false,
+      deleted_by: null,
+      deleted_at: null
+    })
+    .eq('id', leadId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+// Permanently delete a lead (admin only)
+export const permanentDeleteLead = async (leadId, userId, userRole) => {
+  if (!['owner', 'admin'].includes(userRole)) {
+    throw new Error('Only admins can permanently delete leads');
+  }
+
+  const { data: lead, error: fetchError } = await supabase
+    .from('leads')
+    .select('created_by, is_deleted')
+    .eq('id', leadId)
+    .single();
+
+  if (fetchError || !lead) {
+    throw new Error('Lead not found');
+  }
+
+  if (!lead.is_deleted) {
+    throw new Error('Lead must be soft-deleted first');
+  }
+
+  // Admin can only permanently delete leads they created, owner can delete all
+  if (userRole === 'admin' && lead.created_by !== userId) {
+    throw new Error('You can only permanently delete leads you created');
+  }
+
+  const { error } = await supabase
+    .from('leads')
+    .delete()
+    .eq('id', leadId);
+
+  if (error) throw error;
+  return { success: true, message: 'Lead permanently deleted' };
 };

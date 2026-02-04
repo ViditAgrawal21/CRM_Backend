@@ -44,4 +44,27 @@ router.post('/assign',
   leadsController.assignLeadController
 );
 
+// Soft delete lead (all roles can delete their own leads)
+router.delete('/:id/soft', 
+  leadsController.softDeleteLeadController
+);
+
+// Get deleted leads (admin only)
+router.get('/deleted', 
+  authorize('owner', 'admin'), 
+  leadsController.getDeletedLeadsController
+);
+
+// Restore deleted lead (admin only)
+router.patch('/:id/restore', 
+  authorize('owner', 'admin'), 
+  leadsController.restoreLeadController
+);
+
+// Permanently delete lead (admin only)
+router.delete('/:id/permanent', 
+  authorize('owner', 'admin'), 
+  leadsController.permanentDeleteLeadController
+);
+
 export default router;

@@ -232,6 +232,11 @@ const deactivateAdmin = async (adminId) => {
       "converted": 100,
       "spam": 50
     },
+    "leadsByType": {
+      "websiteLeads": 800,
+      "marketData": 700
+    },
+    "deletedLeads": 45,
     "thisMonth": {
       "totalMeetings": 180,
       "totalVisits": 120,
@@ -262,6 +267,20 @@ const OwnerDashboard = () => {
           <Statistic title="Total Leads" value={stats?.overview.totalLeads} />
         </Card>
         <Card>
+          <Statistic 
+            title="Website Leads" 
+            value={stats?.leadsByType.websiteLeads}
+            valueStyle={{ color: '#3f8600' }}
+          />
+        </Card>
+        <Card>
+          <Statistic 
+            title="Market Data" 
+            value={stats?.leadsByType.marketData}
+            valueStyle={{ color: '#cf1322' }}
+          />
+        </Card>
+        <Card>
           <Statistic title="Active Users" value={stats?.overview.activeUsers} />
         </Card>
         <Card>
@@ -269,6 +288,13 @@ const OwnerDashboard = () => {
         </Card>
         <Card>
           <Statistic title="Conversions" value={stats?.thisMonth.conversions} />
+        </Card>
+        <Card>
+          <Statistic 
+            title="Deleted Leads" 
+            value={stats?.deletedLeads}
+            valueStyle={{ color: '#ff4d4f' }}
+          />
         </Card>
       </div>
       
@@ -286,6 +312,294 @@ const OwnerDashboard = () => {
       <Card title="Top Performers">
         <TopPerformersTable />
       </Card>
+    </div>
+  );
+};
+```
+
+---
+
+## 📋 Leads Management
+
+### Get All Leads (Mixed - Website + Market Data)
+**GET** `/leads`
+
+Returns all leads (both website leads and market data).
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "type": "lead",
+      "name": "John Doe",
+      "phone": "9876543210",
+      "status": "interested",
+      "configuration": "3BHK",
+      "location": "Pune West",
+      "remark": "Interested in Green Valley",
+      "assignedToUser": {
+        "id": "uuid",
+        "name": "Employee 1",
+        "phone": "6666666666"
+      },
+      "createdByUser": {
+        "id": "uuid",
+        "name": "Admin 1",
+        "phone": "8888888888"
+      },
+      "isUploadedRecord": false,
+      "createdAt": "2026-02-04T10:00:00Z"
+    },
+    {
+      "id": "uuid",
+      "type": "data",
+      "name": "Jane Smith",
+      "phone": "9876543211",
+      "status": "new",
+      "isUploadedRecord": true,
+      "uploadedBy": "admin-uuid",
+      "createdAt": "2026-02-04T11:00:00Z"
+    }
+  ]
+}
+```
+
+### Get Website Leads Only (Genuine Leads)
+**GET** `/leads?type=lead`
+
+Returns only genuine leads from website.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "type": "lead",
+      "name": "John Doe",
+      "phone": "9876543210",
+      "status": "interested"
+    }
+  ]
+}
+```
+
+### Get Market Data Only (Cold Leads)
+**GET** `/leads?type=data`
+
+Returns only market data (bulk uploaded cold leads).
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "type": "data",
+      "name": "Jane Smith",
+      "phone": "9876543211",
+      "status": "new",
+      "isUploadedRecord": true
+    }
+  ]
+}
+```
+
+### Filter Leads by Type and Status
+**GET** `/leads?type=lead&status=interested`
+
+Combine filters for precise results.
+
+**Leads Dashboard Component:**
+```javascript
+import { Tabs, Table, Tag } from 'antd';
+
+const LeadsManagement = () => {
+  const [activeTab, setActiveTab] = useState('all');
+  const [leads, setLeads] = useState([]);
+  
+  const fetchLeads = async (type = null, status = null) => {
+    const params = new URLSearchParams();
+    if (type) params.append('type', type);
+    if (status) params.append('status', status);
+    
+    const { data } = await api.get(`/leads?${params}`);
+    setLeads(data.data);
+  };
+  
+  const columns = [
+    { 
+      title: 'Type', 
+      dataIndex: 'type',
+      render: (type) => (
+        <Tag color={type === 'lead' ? 'green' : 'orange'}>
+          {type === 'lead' ? 'Website' : 'Market'}
+        </Tag>
+      )
+    },
+    { title: 'Name', dataIndex: 'name' },
+    { title: 'Phone', dataIndex: 'phone' },
+    { title: 'Status', dataIndex: 'status' },
+    { 
+      title: 'Source',
+      render: (record) => record.isUploadedRecord ? '📤 Bulk Upload' : '✍️ Manual'
+    }
+  ];
+  
+  return (
+    <div>
+      <Tabs onChange={(key) => {
+        setActiveTab(key);
+        if (key === 'all') fetchLeads();
+        else if (key === 'lead') fetchLeads('lead');
+        else if (key === 'data') fetchLeads('data');
+      }}>
+        <Tabs.TabPane tab="All Leads" key="all" />
+        <Tabs.TabPane tab="Website Leads" key="lead" />
+        <Tabs.TabPane tab="Market Data" key="data" />
+      </Tabs>
+      
+      <Table dataSource={leads} columns={columns} />
+    </div>
+  );
+};
+```
+
+### View Deleted Leads (Trash)
+**GET** `/leads/deleted`
+
+Owner can see all deleted leads from entire organization.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "type": "lead",
+      "name": "John Doe",
+      "phone": "9876543210",
+      "status": "interested",
+      "isDeleted": true,
+      "deletedBy": "manager-uuid",
+      "deletedAt": "2026-02-04T15:30:00Z",
+      "deletedByUser": {
+        "id": "uuid",
+        "name": "Manager 1",
+        "phone": "7777777777"
+      }
+    }
+  ]
+}
+```
+
+### Restore Deleted Lead
+**PATCH** `/leads/:id/restore`
+
+Owner can restore any deleted lead.
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Lead restored successfully",
+  "data": {
+    "id": "uuid",
+    "isDeleted": false,
+    "deletedBy": null,
+    "deletedAt": null
+  }
+}
+```
+
+### Permanently Delete Lead
+**DELETE** `/leads/:id/permanent`
+
+Owner can permanently delete any lead from database.
+
+⚠️ **Warning:** This action cannot be undone!
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Lead permanently deleted"
+}
+```
+
+**Trash Management Component:**
+```javascript
+import { Table, Button, Popconfirm, Space } from 'antd';
+
+const TrashManagement = () => {
+  const [deletedLeads, setDeletedLeads] = useState([]);
+  
+  useEffect(() => {
+    fetchDeletedLeads();
+  }, []);
+  
+  const fetchDeletedLeads = async () => {
+    const { data } = await api.get('/leads/deleted');
+    setDeletedLeads(data.data);
+  };
+  
+  const restoreLead = async (leadId) => {
+    await api.patch(`/leads/${leadId}/restore`);
+    message.success('Lead restored');
+    fetchDeletedLeads();
+  };
+  
+  const permanentDelete = async (leadId) => {
+    await api.delete(`/leads/${leadId}/permanent`);
+    message.success('Lead permanently deleted');
+    fetchDeletedLeads();
+  };
+  
+  const columns = [
+    { title: 'Name', dataIndex: 'name' },
+    { title: 'Phone', dataIndex: 'phone' },
+    { 
+      title: 'Deleted By', 
+      render: (record) => record.deletedByUser?.name 
+    },
+    { 
+      title: 'Deleted At', 
+      dataIndex: 'deletedAt',
+      render: (date) => new Date(date).toLocaleString()
+    },
+    {
+      title: 'Actions',
+      render: (record) => (
+        <Space>
+          <Button 
+            type="primary" 
+            onClick={() => restoreLead(record.id)}
+          >
+            Restore
+          </Button>
+          
+          <Popconfirm
+            title="Permanently delete this lead?"
+            description="This action cannot be undone!"
+            onConfirm={() => permanentDelete(record.id)}
+            okText="Delete Forever"
+            okButtonProps={{ danger: true }}
+          >
+            <Button danger>Delete Forever</Button>
+          </Popconfirm>
+        </Space>
+      )
+    }
+  ];
+  
+  return (
+    <div>
+      <h2>Trash ({deletedLeads.length})</h2>
+      <Table dataSource={deletedLeads} columns={columns} />
     </div>
   );
 };
@@ -690,6 +1004,7 @@ const TeamPerformanceChart = () => {
 ```javascript
 const LeadsTable = () => {
   const [filters, setFilters] = useState({
+    type: '', // 'lead' or 'data'
     status: '',
     assignedTo: '',
     dateFrom: '',
@@ -707,12 +1022,26 @@ const LeadsTable = () => {
       <Form layout="inline">
         <Form.Item>
           <Select 
+            placeholder="Type" 
+            onChange={(val) => setFilters({...filters, type: val})}
+            allowClear
+          >
+            <Option value="lead">Website Leads</Option>
+            <Option value="data">Market Data</Option>
+          </Select>
+        </Form.Item>
+        
+        <Form.Item>
+          <Select 
             placeholder="Status" 
             onChange={(val) => setFilters({...filters, status: val})}
+            allowClear
           >
             <Option value="new">New</Option>
             <Option value="contacted">Contacted</Option>
             <Option value="prospect">Prospect</Option>
+            <Option value="interested">Interested</Option>
+            <Option value="converted">Converted</Option>
           </Select>
         </Form.Item>
         
@@ -864,10 +1193,14 @@ src/
 │   ├── OrganizationChart.jsx
 │   ├── PropertyForm.jsx
 │   ├── TargetsTable.jsx
+│   ├── LeadsTable.jsx
+│   ├── TrashManagement.jsx
 │   └── StatCard.jsx
 ├── pages/
 │   ├── Dashboard.jsx
 │   ├── AdminManagement.jsx
+│   ├── LeadsManagement.jsx
+│   ├── Trash.jsx
 │   ├── Properties.jsx
 │   ├── Analytics.jsx
 │   └── Settings.jsx

@@ -34,7 +34,13 @@ export const bulkCreateLeadsController = asyncHandler(async (req, res) => {
 });
 
 export const getLeadsController = asyncHandler(async (req, res) => {
-  const leads = await leadsService.getLeads(req.user.id, req.user.role);
+  // Extract filters from query parameters
+  const filters = {
+    type: req.query.type, // 'lead' or 'data'
+    status: req.query.status // 'new', 'contacted', etc.
+  };
+
+  const leads = await leadsService.getLeads(req.user.id, req.user.role, filters);
 
   res.status(200).json({
     success: true,
@@ -69,6 +75,51 @@ export const bulkUploadLeadsController = asyncHandler(async (req, res) => {
 
   res.status(201).json({
     success: true,
+    data: result
+  });
+});
+
+export const softDeleteLeadController = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const lead = await leadsService.softDeleteLead(id, req.user.id, req.user.role);
+
+  res.status(200).json({
+    success: true,
+    message: 'Lead moved to trash',
+    data: lead
+  });
+});
+
+export const getDeletedLeadsController = asyncHandler(async (req, res) => {
+  const leads = await leadsService.getDeletedLeads(req.user.id, req.user.role);
+
+  res.status(200).json({
+    success: true,
+    data: leads
+  });
+});
+
+export const restoreLeadController = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const lead = await leadsService.restoreLead(id, req.user.id, req.user.role);
+
+  res.status(200).json({
+    success: true,
+    message: 'Lead restored successfully',
+    data: lead
+  });
+});
+
+export const permanentDeleteLeadController = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const result = await leadsService.permanentDeleteLead(id, req.user.id, req.user.role);
+
+  res.status(200).json({
+    success: true,
+    message: 'Lead permanently deleted',
     data: result
   });
 });
