@@ -65,3 +65,23 @@ export const deactivateUser = async (targetUserId, requesterId) => {
 
   return { success: true };
 };
+
+export const activateUser = async (targetUserId, requesterId) => {
+  // Check if requester has access to target user
+  const team = await getUserTeam(requesterId);
+  const hasAccess = team.some(member => member.id === targetUserId);
+
+  if (!hasAccess) {
+    throw new Error('You do not have permission to activate this user');
+  }
+
+  // Activate user (only the specific user, not children)
+  const { error } = await supabase
+    .from('users')
+    .update({ is_active: true, updated_at: new Date().toISOString() })
+    .eq('id', targetUserId);
+
+  if (error) throw error;
+
+  return { success: true };
+};

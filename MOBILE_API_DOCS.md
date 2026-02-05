@@ -132,6 +132,34 @@ Returns all team members under you (managers see employees, admin sees all).
 }
 ```
 
+### Deactivate User (Admin/Manager Only)
+**PATCH** `/users/deactivate/:userId`
+
+Deactivate a user and all their team members (cascades down).
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "User and their team deactivated successfully"
+}
+```
+
+**Note:** Deactivated users cannot login or access any API endpoints.
+
+### Activate User (Admin/Manager Only)
+**PATCH** `/users/activate/:userId`
+
+Reactivate a deactivated user (does not cascade - activate each user individually).
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "User activated successfully"
+}
+```
+
 ---
 
 ## 📊 Leads Management
@@ -730,8 +758,8 @@ const MonthlyTargetCard = () => {
 
 ## 🏠 Properties (View Only for Admin/Manager/Employee)
 
-### Get Properties
-**GET** `/properties?location=Pune`
+### Get All Properties
+**GET** `/properties`
 
 **Response:**
 ```json
@@ -747,13 +775,107 @@ const MonthlyTargetCard = () => {
       "price": "50L - 80L",
       "possession": "Dec 2026",
       "link": "https://example.com/project",
-      "contactUs": "1234567890"
+      "contactUs": "1234567890",
+      "amenitiesSummary": "All 3BHK Flat 2 Covered Car Parking",
+      "driveLink": "https://drive.google.com/..."
     }
   ]
 }
 ```
 
-**Share Property via WhatsApp:**
+### Get Single Property
+**GET** `/properties/:id`
+
+Fetch details of a specific property.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "projectName": "Green Valley",
+    "builders": "ABC Builders",
+    "location": "Pune West",
+    "configuration": "2BHK, 3BHK",
+    "price": "50L - 80L",
+    "possession": "Dec 2026"
+  }
+}
+```
+
+### Get Properties Summary
+**GET** `/properties/summary`
+
+Get count and summary of properties.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "total": 155,
+    "byLocation": {
+      "Pune West": 45,
+      "Pune East": 38
+    }
+  }
+}
+```
+
+### Share Property via WhatsApp (API)
+**POST** `/properties/:id/share`
+
+Generate WhatsApp share link from backend.
+
+**Request:**
+```json
+{
+  "phoneNumber": "9876543210"
+}
+```
+
+**OR with Lead ID:**
+```json
+{
+  "leadId": "uuid"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "whatsappUrl": "https://wa.me/919876543210?text=...",
+    "message": "🏡 Green Valley\n\n🏗️ Builder: ABC Builders..."
+  }
+}
+```
+
+**Usage:**
+```javascript
+import { Linking } from 'react-native';
+
+const sharePropertyToLead = async (propertyId, leadId) => {
+  const response = await fetch(`API_URL/properties/${propertyId}/share`, {
+    method: 'POST',
+    headers: { 
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ leadId })
+  });
+  
+  const data = await response.json();
+  
+  if (data.success) {
+    Linking.openURL(data.data.whatsappUrl);
+  }
+};
+```
+
+**Share Property via WhatsApp (Direct):**
 ```javascript
 const shareProperty = (property, customerPhone) => {
   const message = `
@@ -956,7 +1078,17 @@ All API errors return:
 }
 ```
 
-**Handle errors:**
+**Account Deactivation (403 Forbidden):**
+When admin is deactivated, all team members get this error:
+```json
+{
+  "error": "Account deactivated",
+  "message": "Your account has been deactivated. Please contact your administrator.",
+  "code": "ACCOUNT_DEACTIVATED"
+}
+```
+
+**Handle errors with auto-logout:**
 ```javascript
 const apiCall = async () => {
   try {
@@ -964,6 +1096,17 @@ const apiCall = async () => {
     const data = await response.json();
     
     if (!response.ok) {
+      // Handle account deactivation
+      if (response.status === 403 && data.code === 'ACCOUNT_DEACTIVATED') {
+        await AsyncStorage.clear();
+        Alert.alert(
+          'Account Deactivated',
+          data.message,
+          [{ text: 'OK', onPress: () => navigation.replace('Login') }]
+        );
+        return null;
+      }
+      
       throw new Error(data.error || 'Something went wrong');
     }
     
@@ -973,6 +1116,37 @@ const apiCall = async () => {
     return null;
   }
 };
+```
+
+**Global Error Interceptor (Recommended):**
+```javascript
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: 'http://api.example.com/api'
+});
+
+// Response interceptor
+api.interceptors.response.use(
+  response => response,
+  async error => {
+    if (error.response?.status === 403 && 
+        error.response?.data?.code === 'ACCOUNT_DEACTIVATED') {
+      // Clear storage and logout
+      await AsyncStorage.clear();
+      
+      Alert.alert(
+        'Account Deactivated',
+        error.response.data.message,
+        [{ text: 'OK', onPress: () => RootNavigation.replace('Login') }]
+      );
+    }
+    
+    return Promise.reject(error);
+  }
+);
+
+export default api;
 ```
 
 ---

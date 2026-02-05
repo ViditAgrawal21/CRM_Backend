@@ -39,7 +39,7 @@ export const getLogs = async (userId, leadId = null) => {
     query = query.eq('lead_id', leadId);
   }
 
-  const { data, error } = await query.order('created_at', { ascending: false });
+  const { data, error } = await query.order('timestamp', { ascending: false });
 
   if (error) throw error;
   return data;

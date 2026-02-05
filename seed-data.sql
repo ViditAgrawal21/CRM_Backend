@@ -10,11 +10,18 @@
 -- 1. Users (Hierarchy)
 -- ========================================
 
+-- Owner (Top level - no parent)
+-- Password: owner123
+-- Bcrypt hash: $2b$10$xQkVZYGGTz0p5qJZr5L5xuI5g5yJ5gPZ5h5F5n5L5L5L5L5L5L5L5L
+INSERT INTO users (id, name, phone, password_hash, role, parent_id)
+VALUES 
+('00000000-0000-0000-0000-000000000000', 'Owner', '9999999999', '$2b$10$MzUt5/cWKzR9i/uSXeQ2.Ou9Y02XfQtmmbe3QT.j3lI1i3DsHEMXe', 'owner', NULL);
+
 -- Admin (created by Owner)
 INSERT INTO users (id, name, phone, password_hash, role, parent_id, monthly_meeting_target, monthly_visit_target, monthly_revenue_target, monthly_bonus)
 VALUES 
 ('11111111-1111-1111-1111-111111111111', 'Rajesh Kumar', '8888888888', '$2b$10$MzUt5/cWKzR9i/uSXeQ2.Ou9Y02XfQtmmbe3QT.j3lI1i3DsHEMXe', 'admin', 
-(SELECT id FROM users WHERE phone='9999999999'), 50, 30, 5000000, 50000);
+'00000000-0000-0000-0000-000000000000', 50, 30, 5000000, 50000);
 
 -- Managers (created by Admin)
 INSERT INTO users (id, name, phone, password_hash, role, parent_id, monthly_meeting_target, monthly_visit_target, monthly_revenue_target, monthly_bonus)

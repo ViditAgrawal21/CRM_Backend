@@ -26,4 +26,10 @@ router.patch('/deactivate/:id',
   usersController.deactivateUserController
 );
 
+// Activate user (owner/admin only)
+router.patch('/activate/:id', 
+  authorize('owner', 'admin', 'manager'), 
+  usersController.activateUserController
+);
+
 export default router;

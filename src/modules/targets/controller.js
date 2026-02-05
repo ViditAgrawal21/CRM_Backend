@@ -3,7 +3,6 @@ import { asyncHandler } from '../../utils/asyncHandler.js';
 
 export const setTargetController = asyncHandler(async (req, res) => {
   const target = await targetsService.setTarget(req.body, req.user.id, req.user.role);
-
   res.status(201).json({
     success: true,
     data: target
@@ -13,7 +12,6 @@ export const setTargetController = asyncHandler(async (req, res) => {
 export const getTargetsController = asyncHandler(async (req, res) => {
   const { month } = req.query;
   const targets = await targetsService.getTargets(req.user.id, month);
-
   res.status(200).json({
     success: true,
     data: targets

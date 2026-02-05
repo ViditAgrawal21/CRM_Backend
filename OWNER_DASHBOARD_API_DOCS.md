@@ -180,16 +180,43 @@ const OrganizationChart = () => {
 ### Deactivate Admin (Cascades to All Children)
 **PATCH** `/users/deactivate/:adminId`
 
-**Important:** Deactivating an admin will automatically deactivate:
-- All managers under that admin
-- All employees under those managers
-- Block app login for all deactivated users
+**Important:** Deactivating an admin will automatically:
+- ✅ Deactivate all managers under that admin
+- ✅ Deactivate all employees under those managers
+- ✅ **Immediately block API access** for all deactivated users
+- ✅ **Force logout** on next API call (mobile apps will receive 403 error)
 
 **Response:**
 ```json
 {
   "success": true,
   "message": "User and their team deactivated successfully"
+}
+```
+
+**Error Response (When Deactivated User Tries to Access API):**
+```json
+{
+  "error": "Account deactivated",
+  "message": "Your account has been deactivated. Please contact your administrator.",
+  "code": "ACCOUNT_DEACTIVATED"
+}
+```
+
+**HTTP Status:** `403 Forbidden`
+
+---
+
+### Activate User (Re-enable Account)
+**PATCH** `/users/activate/:userId`
+
+**Note:** Activating a user only activates **that specific user**, not their team members. You must activate each team member individually if needed.
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "User activated successfully"
 }
 ```
 
@@ -221,13 +248,13 @@ const deactivateAdmin = async (adminId) => {
       "totalAdmins": 3,
       "totalManagers": 10,
       "totalEmployees": 50,
-      "activeUsers": 60,
-      "inactiveUsers": 3
+      "activeUsers": 60
     },
     "leadsByStatus": {
       "new": 200,
       "contacted": 400,
       "interested": 300,
+      "not_interested": 50,
       "prospect": 150,
       "converted": 100,
       "spam": 50
@@ -240,6 +267,8 @@ const deactivateAdmin = async (adminId) => {
     "thisMonth": {
       "totalMeetings": 180,
       "totalVisits": 120,
+      "totalCalls": 450,
+      "totalBookings": 25,
       "conversions": 25
     },
     "performance": {
@@ -249,9 +278,51 @@ const deactivateAdmin = async (adminId) => {
         "meetings": 45,
         "visits": 30
       }
+    },
+    "metrics": {
+      "clientsDropped": 100,
+      "serviceManagers": 10,
+      "salesEmployees": 50,
+      "recentLeadsCount": 1200
     }
   }
 }
+```
+
+**Field Descriptions:**
+
+- **overview.totalLeads** - Total leads in system
+- **overview.totalAdmins** - Count of admin users
+- **overview.totalManagers** - Count of manager users (Service Managers)
+- **overview.totalEmployees** - Count of employee users (Sales Employees)
+- **overview.activeUsers** - Total active users across all roles
+
+- **leadsByStatus** - Breakdown by lead status
+  - `interested` - Active interested leads
+  - `contacted` - Leads that have been contacted (Follow Ups)
+  - `new` - New leads not yet contacted (Backlog)
+  - `prospect` - Hot prospects close to conversion
+  - `converted` - Successfully converted leads (Bookings)
+  - `not_interested` - Not interested leads
+  - `spam` - Spam/invalid leads
+
+- **leadsByType.websiteLeads** - Genuine leads from website
+- **leadsByType.marketData** - Bulk uploaded market data (Raw Data)
+
+- **deletedLeads** - Total deleted leads (Trash)
+
+- **thisMonth.totalMeetings** - Completed meetings this month
+- **thisMonth.totalVisits** - Completed site visits this month
+- **thisMonth.totalCalls** - Total calls logged this month
+- **thisMonth.totalBookings** - Conversions/bookings this month
+- **thisMonth.conversions** - Same as totalBookings
+
+- **performance.topPerformer** - Best performing team member stats
+
+- **metrics.clientsDropped** - Not interested + spam leads (Client Dropped)
+- **metrics.serviceManagers** - Total managers (Service Managers card)
+- **metrics.salesEmployees** - Total employees (Sales Employees card)
+- **metrics.recentLeadsCount** - Leads from last 30 days (Recent Leads)
 ```
 
 **Dashboard Layout:**
@@ -723,26 +794,26 @@ const AddPropertyForm = () => {
 };
 ```
 
-### Bulk Upload Properties (CSV)
+### Bulk Upload Properties (Excel)
 **POST** `/properties/bulk`
 
-**CSV Format:**
-```csv
-Project Name,Builders,Location,Configuration,Price,Possession,Link,Contact Us
-Green Valley,ABC,Pune West,"2BHK, 3BHK",50L-80L,Dec 2026,http://link.com,1234567890
+**Only Owner can upload.**
+
+**Request:** Multipart form data with Excel file (.xlsx or .xls)
+
+**Excel Format:**
+```
+Project Name | Builders | Location | Configuration | Price | Possession | Link | Contact Us
+Green Valley | ABC      | Pune West| 2BHK, 3BHK   | 50L-80L | Dec 2026 | http://link.com | 1234567890
 ```
 
-**Request:**
-```json
-{
-  "csvContent": "Project Name,Builders,Location,Configuration,Price,Possession,Link,Contact Us\nGreen Valley,ABC,Pune West,2BHK,50L,Dec 2026,http://link.com,1234567890"
-}
-```
+**Form Field:** `file` (Excel file, max 10MB)
 
 **Response:**
 ```json
 {
   "success": true,
+  "message": "Bulk upload completed",
   "data": {
     "total": 10,
     "success": 9,
@@ -752,15 +823,60 @@ Green Valley,ABC,Pune West,"2BHK, 3BHK",50L-80L,Dec 2026,http://link.com,1234567
 }
 ```
 
-**CSV Upload Component:**
+### Share Property via WhatsApp
+**POST** `/properties/:id/share`
+
+**All roles can share properties.**
+
+Generates WhatsApp share link for a specific property.
+
+**Request:**
+```json
+{
+  "phoneNumber": "9876543210"
+}
+```
+
+**OR**
+
+```json
+{
+  "leadId": "uuid"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "whatsappUrl": "https://wa.me/919876543210?text=...",
+    "message": "🏡 Green Valley\n\n🏗️ Builder: ABC Builders\n📍 Location: Pune West..."
+  }
+}
+```
+
+**Excel Upload Component:**
 ```javascript
-import { Upload, Button } from 'antd';
-import Papa from 'papaparse';
+import { Upload, Button, message } from 'antd';
+import { UploadOutlined } from '@ant-design/icons';
 
 const BulkPropertyUpload = () => {
-  const handleUpload = (file) => {
-    Papa.parse(file, {
-      complete: async (result) => {
+  const handleUpload = async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+      const response = await api.post('/properties/bulk', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      
+      message.success(`Uploaded: ${response.data.data.success} properties`);
+      if (response.data.data.failed > 0) {
+        message.warning(`Failed: ${response.data.data.failed} properties`);
+      }
+    } catch (error) {
+      message.error('Upload failed');
         const csvContent = Papa.unparse(result.data);
         
         try {
@@ -773,14 +889,14 @@ const BulkPropertyUpload = () => {
           message.error('Upload failed');
         }
       }
-    });
+    }
     
     return false; // Prevent auto upload
   };
   
   return (
-    <Upload beforeUpload={handleUpload} accept=".csv">
-      <Button icon={<UploadOutlined />}>Upload CSV</Button>
+    <Upload beforeUpload={handleUpload} accept=".xlsx,.xls" maxCount={1}>
+      <Button icon={<UploadOutlined />}>Upload Excel File</Button>
     </Upload>
   );
 };

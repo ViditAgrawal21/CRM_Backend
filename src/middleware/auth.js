@@ -16,16 +16,27 @@ export const authenticate = async (req, res, next) => {
     // Fetch user from database
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, name, phone, role, created_by, is_active')
+      .select('id, name, phone, role, parent_id, is_active')
       .eq('id', decoded.userId)
       .single();
 
-    if (error || !user) {
+    if (error) {
+      console.error('Supabase error:', error);
+      return res.status(401).json({ error: 'Invalid token', details: error.message });
+    }
+    
+    if (!user) {
+      console.error('User not found for ID:', decoded.userId);
       return res.status(401).json({ error: 'Invalid token' });
     }
 
+    // Check if user is active
     if (!user.is_active) {
-      return res.status(403).json({ error: 'Account is deactivated' });
+      return res.status(403).json({ 
+        error: 'Account deactivated', 
+        message: 'Your account has been deactivated. Please contact your administrator.',
+        code: 'ACCOUNT_DEACTIVATED'
+      });
     }
 
     req.user = user;

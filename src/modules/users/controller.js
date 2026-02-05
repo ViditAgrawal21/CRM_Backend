@@ -30,3 +30,15 @@ export const deactivateUserController = asyncHandler(async (req, res) => {
     data: result
   });
 });
+
+export const activateUserController = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const result = await usersService.activateUser(id, req.user.id);
+
+  res.status(200).json({
+    success: true,
+    message: 'User activated successfully',
+    data: result
+  });
+});

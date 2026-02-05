@@ -154,11 +154,13 @@ export const saveDailyReport = async (userId, reportData) => {
     .upsert({
       user_id: userId,
       report_date: reportDate,
+      visits_till_now: dailyStats.visitsTillNow,
+      meetings_till_now: dailyStats.meetingsTillNow,
+      prospects_till_now: dailyStats.prospectsTillNow,
+      today_meetings: dailyStats.todayMeetings,
+      today_visits: dailyStats.todayVisits,
       total_calls: dailyStats.totalCalls,
-      total_whatsapp: 0,
-      total_templates: 0,
-      total_meetings: dailyStats.todayMeetings,
-      total_visits: dailyStats.todayVisits,
+      prospects_data: dailyStats.prospects,
       next_day_plan: nextDayPlan
     })
     .select()
